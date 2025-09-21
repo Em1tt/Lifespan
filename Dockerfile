@@ -1,17 +1,30 @@
-# Use Bun for install & runtime
-FROM oven/bun:1 AS base
+FROM node:20-alpine
+
+# Install system dependencies required for native modules and canvas
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    librsvg-dev
+
 WORKDIR /app
 
-# Copy lockfiles first (if present) for better layer caching
-COPY package.json bun.lockb* ./
-RUN bun install
+# Copy package files
+COPY package*.json ./
 
-# Copy rest of the source
+# Install dependencies
+RUN npm ci
+
+# Copy rest of the application
 COPY . .
 
 # Build the application
-RUN bun run build
+RUN npm run build
 
 EXPOSE 3000
 
-CMD ["bun", "build/index"]
+CMD ["node", "build"]
